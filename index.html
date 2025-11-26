@@ -385,12 +385,14 @@
                 setDragStartY(null);
             };
 
-            const handleCartPointerDown = (e) => {
-                startDrag(e.clientY);
+            const handleCartTouchStart = (e) => {
+                if (!e.touches || e.touches.length === 0) return;
+                startDrag(e.touches[0].clientY);
             };
 
-            const handleCartPointerUp = (e) => {
-                endDrag(e.clientY);
+            const handleCartTouchEnd = (e) => {
+                if (!e.changedTouches || e.changedTouches.length === 0) return;
+                endDrag(e.changedTouches[0].clientY);
             };
 
             const toggleCartExpanded = () => {
@@ -485,10 +487,13 @@
                                     ? 'translateY(0)'
                                     : 'translateY(calc(100% - 64px))',
                             }}
-                            onPointerDown={handleCartPointerDown}
-                            onPointerUp={handleCartPointerUp}
                         >
-                            <div style={styles.cartHandle} onClick={toggleCartExpanded}></div>
+                            <div
+                                style={styles.cartHandle}
+                                onClick={toggleCartExpanded}
+                                onTouchStart={handleCartTouchStart}
+                                onTouchEnd={handleCartTouchEnd}
+                            ></div>
                             <div style={styles.cartHeader}>
                                 <span style={styles.cartTitle}>🛒 Your Cart ({cart.length})</span>
                                 <span style={styles.cartTotal}>${totalSpent.toFixed(2)}</span>
