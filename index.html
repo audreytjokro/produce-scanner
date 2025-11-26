@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Produce Scanner Experiment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --green-50: #f0fdf4;
+            --green-100: #dcfce7;
+            --green-200: #bbf7d0;
+            --green-500: #22c55e;
+            --green-600: #16a34a;
+            --green-700: #15803d;
+            --orange-100: #ffedd5;
+            --orange-500: #f97316;
+            --yellow-100: #fef9c3;
+            --yellow-500: #eab308;
+            --red-100: #fee2e2;
+            --red-500: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(145deg, #f0fdf4 0%, #ffffff 50%, #fefce8 100%);
+            min-height: 100vh;
+            color: var(--gray-800);
+            overflow-x: hidden;
+        }
+
+        #root {
+            min-height: 100vh;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.6s ease-out forwards;
+        }
+
+        .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+        .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+        .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+        .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        // ============ CONFIGURATION ============
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-q4s2BEDcXRYGH-Jxd9pFZ0EarLV3DPWjEPA3QvyIhiDhdJy9ph1HIGfz5eAyH--aiw/exec'; // Replace with your Google Apps Script URL
+        const BUDGET = 20.00;
+
+        // Produce items with quality variants
+        const PRODUCE_ITEMS = [
+            { id: 1, name: 'Strawberries', emoji: '🍓', variants: [
+                { quality: 'Fresh', price: 4.99, qualityScore: 95, daysToExpire: '5-7 days' },
+                { quality: 'Slightly Bruised', price: 2.49, qualityScore: 60, daysToExpire: '2-3 days' }
+            ]},
+            { id: 2, name: 'Avocados', emoji: '🥑', variants: [
+                { quality: 'Perfectly Ripe', price: 2.99, qualityScore: 98, daysToExpire: '2-3 days' },
+                { quality: 'Unripe', price: 1.99, qualityScore: 70, daysToExpire: '5-7 days' },
+                { quality: 'Overripe', price: 0.99, qualityScore: 40, daysToExpire: '1 day' }
+            ]},
+            { id: 3, name: 'Bananas', emoji: '🍌', variants: [
+                { quality: 'Just Ripe', price: 1.99, qualityScore: 92, daysToExpire: '4-5 days' },
+                { quality: 'Spotted', price: 0.99, qualityScore: 55, daysToExpire: '1-2 days' }
+            ]},
+            { id: 4, name: 'Apples', emoji: '🍎', variants: [
+                { quality: 'Crisp & Fresh', price: 3.49, qualityScore: 96, daysToExpire: '2+ weeks' },
+                { quality: 'Minor Bruising', price: 1.79, qualityScore: 65, daysToExpire: '5-7 days' }
+            ]},
+            { id: 5, name: 'Oranges', emoji: '🍊', variants: [
+                { quality: 'Peak Freshness', price: 3.99, qualityScore: 94, daysToExpire: '10-14 days' },
+                { quality: 'Soft Spots', price: 1.99, qualityScore: 58, daysToExpire: '3-4 days' }
+            ]},
+            { id: 6, name: 'Blueberries', emoji: '🫐', variants: [
+                { quality: 'Premium Fresh', price: 5.99, qualityScore: 97, daysToExpire: '7-10 days' },
+                { quality: 'Some Soft', price: 2.99, qualityScore: 52, daysToExpire: '2-3 days' }
+            ]},
+            { id: 7, name: 'Tomatoes', emoji: '🍅', variants: [
+                { quality: 'Vine Ripe', price: 3.49, qualityScore: 93, daysToExpire: '5-7 days' },
+                { quality: 'Slightly Firm', price: 2.29, qualityScore: 75, daysToExpire: '7-10 days' }
+            ]},
+            { id: 8, name: 'Lemons', emoji: '🍋', variants: [
+                { quality: 'Bright & Firm', price: 1.49, qualityScore: 95, daysToExpire: '2-3 weeks' },
+                { quality: 'Some Blemishes', price: 0.79, qualityScore: 68, daysToExpire: '1 week' }
+            ]},
+            { id: 9, name: 'Grapes', emoji: '🍇', variants: [
+                { quality: 'Plump & Sweet', price: 4.99, qualityScore: 96, daysToExpire: '7-10 days' },
+                { quality: 'Some Wrinkled', price: 2.49, qualityScore: 50, daysToExpire: '2-3 days' }
+            ]},
+            { id: 10, name: 'Mangoes', emoji: '🥭', variants: [
+                { quality: 'Ready to Eat', price: 2.99, qualityScore: 94, daysToExpire: '3-4 days' },
+                { quality: 'Needs Ripening', price: 1.99, qualityScore: 72, daysToExpire: '5-7 days' }
+            ]}
+        ];
+
+        // Flatten items for shopping
+        const createShoppingItems = () => {
+            const items = [];
+            PRODUCE_ITEMS.forEach(produce => {
+                produce.variants.forEach((variant, idx) => {
+                    items.push({
+                        id: `${produce.id}-${idx}`,
+                        produceId: produce.id,
+                        name: produce.name,
+                        emoji: produce.emoji,
+                        quality: variant.quality,
+                        price: variant.price,
+                        qualityScore: variant.qualityScore,
+                        daysToExpire: variant.daysToExpire
+                    });
+                });
+            });
+            return items.sort(() => Math.random() - 0.5); // Shuffle
+        };
+
+        // ============ COMPONENTS ============
+
+        // Welcome Screen
+        const WelcomeScreen = ({ onStart }) => {
+            const [name, setName] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (name.trim()) {
+                    onStart(name.trim());
+                }
+            };
+
+            return (
+                <div style={styles.screenContainer}>
+                    <div style={styles.welcomeContent}>
+                        <div className="animate-fade-in" style={styles.logoContainer}>
+                            <div style={styles.produceIcons}>
+                                <span style={{...styles.floatingEmoji, animationDelay: '0s'}}>🍓</span>
+                                <span style={{...styles.floatingEmoji, animationDelay: '0.2s'}}>🥑</span>
+                                <span style={{...styles.floatingEmoji, animationDelay: '0.4s'}}>🍊</span>
+                            </div>
+                            <h1 style={styles.logoText}>
+                                Produce<br/>
+                                <span style={styles.logoAccent}>Scanner</span>
+                            </h1>
+                            <div style={styles.produceIcons}>
+                                <span style={{...styles.floatingEmoji, animationDelay: '0.6s'}}>🥕</span>
+                                <span style={{...styles.floatingEmoji, animationDelay: '0.8s'}}>🍇</span>
+                                <span style={{...styles.floatingEmoji, animationDelay: '1s'}}>🥬</span>
+                            </div>
+                        </div>
+
+                        <div className="animate-slide-up stagger-2" style={styles.welcomeCard}>
+                            <h2 style={styles.welcomeTitle}>Welcome to the Experiment!</h2>
+                            <p style={styles.welcomeText}>
+                                You'll be shopping for produce with a ${BUDGET.toFixed(2)} budget. 
+                                Make your selections and see what you take home!
+                            </p>
+                            
+                            <form onSubmit={handleSubmit} style={styles.form}>
+                                <label style={styles.label}>Enter your name to begin:</label>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Your name"
+                                    style={styles.input}
+                                    autoFocus
+                                />
+                                <button 
+                                    type="submit" 
+                                    style={{
+                                        ...styles.primaryButton,
+                                        opacity: name.trim() ? 1 : 0.5,
+                                        cursor: name.trim() ? 'pointer' : 'not-allowed'
+                                    }}
+                                    disabled={!name.trim()}
+                                >
+                                    Start Shopping 🛒
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Group Assignment Screen
+        const GroupAssignmentScreen = ({ group, onContinue }) => {
+            return (
+                <div style={styles.screenContainer}>
+                    <div style={styles.centeredContent}>
+                        <div className="animate-fade-in" style={styles.assignmentCard}>
+                            <div style={styles.assignmentIcon}>
+                                {group === 'experimental' ? '🔬' : '🛒'}
+                            </div>
+                            <h2 style={styles.assignmentTitle}>You've been assigned!</h2>
+                            <div style={styles.groupBadge}>
+                                {group === 'experimental' ? 'Scanner Mode' : 'Standard Mode'}
+                            </div>
+                            <p style={styles.assignmentText}>
+                                {group === 'experimental' 
+                                    ? "You'll see quality information for each item to help you decide."
+                                    : "You'll shop like a regular grocery store experience."
+                                }
+                            </p>
+                            <div style={styles.budgetDisplay}>
+                                <span style={styles.budgetLabel}>Your Budget</span>
+                                <span style={styles.budgetAmount}>${BUDGET.toFixed(2)}</span>
+                            </div>
+                            <button onClick={onContinue} style={styles.primaryButton}>
+                                Let's Go! →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Quality Badge Component
+        const QualityBadge = ({ quality, qualityScore }) => {
+            const getColor = () => {
+                if (qualityScore >= 90) return { bg: '#dcfce7', text: '#15803d', border: '#bbf7d0' };
+                if (qualityScore >= 70) return { bg: '#fef9c3', text: '#a16207', border: '#fde047' };
+                if (qualityScore >= 50) return { bg: '#ffedd5', text: '#c2410c', border: '#fed7aa' };
+                return { bg: '#fee2e2', text: '#dc2626', border: '#fecaca' };
+            };
+            const colors = getColor();
+
+            return (
+                <div style={{
+                    ...styles.qualityBadge,
+                    backgroundColor: colors.bg,
+                    color: colors.text,
+                    borderColor: colors.border
+                }}>
+                    <span style={styles.qualityText}>{quality}</span>
+                    <span style={styles.qualityScore}>{qualityScore}%</span>
+                </div>
+            );
+        };
+
+        // Product Card Component
+        const ProductCard = ({ item, showQuality, onAdd, disabled, inCart }) => {
+            const [isAdding, setIsAdding] = useState(false);
+
+            const handleAdd = () => {
+                if (disabled || inCart) return;
+                setIsAdding(true);
+                onAdd(item);
+                setTimeout(() => setIsAdding(false), 300);
+            };
+
+            return (
+                <div 
+                    style={{
+                        ...styles.productCard,
+                        opacity: (disabled && !inCart) ? 0.5 : 1,
+                        transform: isAdding ? 'scale(0.95)' : 'scale(1)',
+                        border: inCart ? '2px solid var(--green-500)' : '1px solid var(--gray-200)'
+                    }}
+                >
+                    {inCart && (
+                        <div style={styles.inCartBadge}>✓ In Cart</div>
+                    )}
+                    <div style={styles.productEmoji}>{item.emoji}</div>
+                    <div style={styles.productInfo}>
+                        <h3 style={styles.productName}>{item.name}</h3>
+                        {showQuality && (
+                            <>
+                                <QualityBadge quality={item.quality} qualityScore={item.qualityScore} />
+                                <div style={styles.expiryInfo}>
+                                    <span style={styles.expiryIcon}>📅</span>
+                                    <span style={styles.expiryText}>{item.daysToExpire}</span>
+                                </div>
+                            </>
+                        )}
+                        <div style={styles.priceTag}>${item.price.toFixed(2)}</div>
+                    </div>
+                    <button 
+                        onClick={handleAdd}
+                        disabled={disabled || inCart}
+                        style={{
+                            ...styles.addButton,
+                            backgroundColor: inCart ? 'var(--gray-200)' : disabled ? 'var(--gray-300)' : 'var(--green-500)',
+                            cursor: (disabled || inCart) ? 'not-allowed' : 'pointer'
+                        }}
+                    >
+                        {inCart ? 'Added' : disabled ? "Can't Afford" : '+ Add'}
+                    </button>
+                </div>
+            );
+        };
+
+        // Shopping Screen
+        const ShoppingScreen = ({ group, cart, setCart, onCheckout }) => {
+            const [items] = useState(() => createShoppingItems());
+            const showQuality = group === 'experimental';
+            
+            const totalSpent = cart.reduce((sum, item) => sum + item.price, 0);
+            const remaining = BUDGET - totalSpent;
+
+            const addToCart = (item) => {
+                if (remaining >= item.price && !cart.find(c => c.id === item.id)) {
+                    setCart([...cart, item]);
+                }
+            };
+
+            const removeFromCart = (itemId) => {
+                setCart(cart.filter(item => item.id !== itemId));
+            };
+
+            return (
+                <div style={styles.shoppingContainer}>
+                    {/* Header */}
+                    <div style={styles.shoppingHeader}>
+                        <div style={styles.headerTop}>
+                            <h1 style={styles.shoppingTitle}>
+                                Produce<span style={styles.titleAccent}>Scanner</span>
+                            </h1>
+                            <div style={styles.modeBadge}>
+                                {showQuality ? '🔬 Scanner' : '🛒 Standard'}
+                            </div>
+                        </div>
+                        <div style={styles.budgetBar}>
+                            <div style={styles.budgetInfo}>
+                                <span style={styles.budgetText}>Remaining:</span>
+                                <span style={{
+                                    ...styles.budgetValue,
+                                    color: remaining < 3 ? 'var(--red-500)' : 'var(--green-600)'
+                                }}>
+                                    ${remaining.toFixed(2)}
+                                </span>
+                            </div>
+                            <div style={styles.progressBarBg}>
+                                <div 
+                                    style={{
+                                        ...styles.progressBarFill,
+                                        width: `${(totalSpent / BUDGET) * 100}%`
+                                    }}
+                                />
+                            </div>
+                            <div style={styles.spentText}>
+                                ${totalSpent.toFixed(2)} of ${BUDGET.toFixed(2)} spent
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Product Grid */}
+                    <div style={styles.productGrid}>
+                        {items.map((item, idx) => (
+                            <div 
+                                key={item.id} 
+                                className="animate-fade-in"
+                                style={{ animationDelay: `${idx * 0.05}s` }}
+                            >
+                                <ProductCard
+                                    item={item}
+                                    showQuality={showQuality}
+                                    onAdd={addToCart}
+                                    disabled={remaining < item.price}
+                                    inCart={cart.some(c => c.id === item.id)}
+                                />
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Cart Summary */}
+                    {cart.length > 0 && (
+                        <div style={styles.cartSummary}>
+                            <div style={styles.cartHeader}>
+                                <span style={styles.cartTitle}>🛒 Your Cart ({cart.length})</span>
+                                <span style={styles.cartTotal}>${totalSpent.toFixed(2)}</span>
+                            </div>
+                            <div style={styles.cartItems}>
+                                {cart.map(item => (
+                                    <div key={item.id} style={styles.cartItem}>
+                                        <span>{item.emoji} {item.name}</span>
+                                        <div style={styles.cartItemRight}>
+                                            <span>${item.price.toFixed(2)}</span>
+                                            <button 
+                                                onClick={() => removeFromCart(item.id)}
+                                                style={styles.removeButton}
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <button onClick={onCheckout} style={styles.checkoutButton}>
+                                Complete Shopping ✓
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Empty State */}
+                    {cart.length === 0 && (
+                        <div style={styles.emptyCart}>
+                            <p>Add items to your cart to continue</p>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Results Screen
+        const ResultsScreen = ({ userName, group, cart, onSubmit, isSubmitting, submitted }) => {
+            const totalSpent = cart.reduce((sum, item) => sum + item.price, 0);
+            const remaining = BUDGET - totalSpent;
+            const avgQuality = cart.length > 0 
+                ? Math.round(cart.reduce((sum, item) => sum + item.qualityScore, 0) / cart.length)
+                : 0;
+            
+            // Calculate metrics
+            const highQualityCount = cart.filter(i => i.qualityScore >= 90).length;
+            const lowQualityCount = cart.filter(i => i.qualityScore < 70).length;
+            const preferenceNote = highQualityCount > lowQualityCount 
+                ? "Tends to prefer higher quality items"
+                : highQualityCount < lowQualityCount 
+                    ? "Tends to prefer budget-friendly options"
+                    : "Balanced quality selection";
+
+            return (
+                <div style={styles.screenContainer}>
+                    <div style={styles.resultsContainer}>
+                        <div className="animate-fade-in" style={styles.resultsHeader}>
+                            <div style={styles.checkmark}>✓</div>
+                            <h1 style={styles.resultsTitle}>Shopping Complete!</h1>
+                            <p style={styles.resultsSubtitle}>Here's your shopping summary</p>
+                        </div>
+
+                        <div className="animate-slide-up stagger-1" style={styles.summaryCard}>
+                            <h3 style={styles.summaryTitle}>Session Details</h3>
+                            <div style={styles.summaryRow}>
+                                <span style={styles.summaryLabel}>Participant</span>
+                                <span style={styles.summaryValue}>{userName}</span>
+                            </div>
+                            <div style={styles.summaryRow}>
+                                <span style={styles.summaryLabel}>Group</span>
+                                <span style={{
+                                    ...styles.summaryValue,
+                                    color: group === 'experimental' ? 'var(--green-600)' : 'var(--gray-600)'
+                                }}>
+                                    {group === 'experimental' ? '🔬 Experimental (Scanner)' : '🛒 Control (Standard)'}
+                                </span>
+                            </div>
+                            <div style={styles.summaryRow}>
+                                <span style={styles.summaryLabel}>Budget Given</span>
+                                <span style={styles.summaryValue}>${BUDGET.toFixed(2)}</span>
+                            </div>
+                            <div style={styles.summaryRow}>
+                                <span style={styles.summaryLabel}>Amount Spent</span>
+                                <span style={styles.summaryValue}>${totalSpent.toFixed(2)}</span>
+                            </div>
+                            <div style={styles.summaryRow}>
+                                <span style={styles.summaryLabel}>Remaining</span>
+                                <span style={styles.summaryValue}>${remaining.toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <div className="animate-slide-up stagger-2" style={styles.summaryCard}>
+                            <h3 style={styles.summaryTitle}>Items Purchased ({cart.length})</h3>
+                            <div style={styles.purchasedList}>
+                                {cart.map(item => (
+                                    <div key={item.id} style={styles.purchasedItem}>
+                                        <span style={styles.purchasedEmoji}>{item.emoji}</span>
+                                        <div style={styles.purchasedInfo}>
+                                            <span style={styles.purchasedName}>{item.name}</span>
+                                            <span style={styles.purchasedQuality}>
+                                                {item.quality} • {item.qualityScore}%
+                                            </span>
+                                        </div>
+                                        <span style={styles.purchasedPrice}>${item.price.toFixed(2)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="animate-slide-up stagger-3" style={styles.summaryCard}>
+                            <h3 style={styles.summaryTitle}>Analysis</h3>
+                            <div style={styles.metricsGrid}>
+                                <div style={styles.metricBox}>
+                                    <span style={styles.metricValue}>{avgQuality}%</span>
+                                    <span style={styles.metricLabel}>Avg Quality</span>
+                                </div>
+                                <div style={styles.metricBox}>
+                                    <span style={styles.metricValue}>{highQualityCount}</span>
+                                    <span style={styles.metricLabel}>High Quality</span>
+                                </div>
+                                <div style={styles.metricBox}>
+                                    <span style={styles.metricValue}>{lowQualityCount}</span>
+                                    <span style={styles.metricLabel}>Budget Items</span>
+                                </div>
+                            </div>
+                            <div style={styles.preferenceNote}>
+                                <span style={styles.noteIcon}>💡</span>
+                                <span>{preferenceNote}</span>
+                            </div>
+                        </div>
+
+                        {!submitted ? (
+                            <button 
+                                onClick={onSubmit} 
+                                style={{
+                                    ...styles.submitButton,
+                                    opacity: isSubmitting ? 0.7 : 1
+                                }}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Saving...' : 'Submit Results 📤'}
+                            </button>
+                        ) : (
+                            <div className="animate-fade-in" style={styles.submittedMessage}>
+                                <span style={styles.submittedIcon}>✅</span>
+                                <span>Results saved successfully!</span>
+                                <p style={styles.thankYou}>Thank you for participating!</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // Main App
+        const App = () => {
+            const [screen, setScreen] = useState('welcome');
+            const [userName, setUserName] = useState('');
+            const [group, setGroup] = useState('');
+            const [cart, setCart] = useState([]);
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [submitted, setSubmitted] = useState(false);
+
+            const handleStart = (name) => {
+                setUserName(name);
+                // Random assignment
+                const assignedGroup = Math.random() < 0.5 ? 'control' : 'experimental';
+                setGroup(assignedGroup);
+                setScreen('assignment');
+            };
+
+            const handleContinueToShop = () => {
+                setScreen('shopping');
+            };
+
+            const handleCheckout = () => {
+                setScreen('results');
+            };
+
+            const handleSubmit = async () => {
+                setIsSubmitting(true);
+                
+                const totalSpent = cart.reduce((sum, item) => sum + item.price, 0);
+                const avgQuality = cart.length > 0 
+                    ? Math.round(cart.reduce((sum, item) => sum + item.qualityScore, 0) / cart.length)
+                    : 0;
+                const highQualityCount = cart.filter(i => i.qualityScore >= 90).length;
+                const lowQualityCount = cart.filter(i => i.qualityScore < 70).length;
+
+                const data = {
+                    timestamp: new Date().toISOString(),
+                    userName,
+                    group,
+                    budgetGiven: BUDGET,
+                    totalSpent: totalSpent.toFixed(2),
+                    remaining: (BUDGET - totalSpent).toFixed(2),
+                    itemCount: cart.length,
+                    items: cart.map(i => `${i.name} (${i.quality}, $${i.price.toFixed(2)}, ${i.qualityScore}%)`).join('; '),
+                    avgQualityScore: avgQuality,
+                    highQualityItems: highQualityCount,
+                    lowQualityItems: lowQualityCount,
+                    preference: highQualityCount > lowQualityCount ? 'Quality' : highQualityCount < lowQualityCount ? 'Budget' : 'Balanced'
+                };
+
+                try {
+                    // Try to send to Google Sheets
+                    if (GOOGLE_SCRIPT_URL !== 'YOUR_GOOGLE_SCRIPT_URL_HERE') {
+                        await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                    }
+                    
+                    // Also log to console for backup
+                    console.log('=== EXPERIMENT DATA ===');
+                    console.log(JSON.stringify(data, null, 2));
+                    console.log('======================');
+                    
+                    setSubmitted(true);
+                } catch (error) {
+                    console.error('Error submitting:', error);
+                    console.log('Data (backup):', JSON.stringify(data, null, 2));
+                    setSubmitted(true);
+                }
+                
+                setIsSubmitting(false);
+            };
+
+            return (
+                <>
+                    {screen === 'welcome' && <WelcomeScreen onStart={handleStart} />}
+                    {screen === 'assignment' && <GroupAssignmentScreen group={group} onContinue={handleContinueToShop} />}
+                    {screen === 'shopping' && (
+                        <ShoppingScreen 
+                            group={group} 
+                            cart={cart} 
+                            setCart={setCart} 
+                            onCheckout={handleCheckout} 
+                        />
+                    )}
+                    {screen === 'results' && (
+                        <ResultsScreen 
+                            userName={userName}
+                            group={group}
+                            cart={cart}
+                            onSubmit={handleSubmit}
+                            isSubmitting={isSubmitting}
+                            submitted={submitted}
+                        />
+                    )}
+                </>
+            );
+        };
+
+        // ============ STYLES ============
+        const styles = {
+            screenContainer: {
+                minHeight: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '20px',
+            },
+            welcomeContent: {
+                textAlign: 'center',
+                maxWidth: '400px',
+                width: '100%',
+            },
+            logoContainer: {
+                marginBottom: '30px',
+            },
+            produceIcons: {
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '15px',
+                marginBottom: '10px',
+            },
+            floatingEmoji: {
+                fontSize: '2.5rem',
+                animation: 'bounce 2s ease-in-out infinite',
+            },
+            logoText: {
+                fontFamily: "'Fraunces', serif",
+                fontSize: '3rem',
+                fontWeight: '700',
+                color: 'var(--gray-800)',
+                lineHeight: '1.1',
+            },
+            logoAccent: {
+                color: 'var(--green-600)',
+            },
+            welcomeCard: {
+                backgroundColor: 'white',
+                borderRadius: '24px',
+                padding: '30px',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+            },
+            welcomeTitle: {
+                fontFamily: "'Fraunces', serif",
+                fontSize: '1.5rem',
+                fontWeight: '600',
+                marginBottom: '12px',
+                color: 'var(--gray-800)',
+            },
+            welcomeText: {
+                color: 'var(--gray-600)',
+                lineHeight: '1.6',
+                marginBottom: '24px',
+            },
+            form: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+            },
+            label: {
+                textAlign: 'left',
+                fontWeight: '500',
+                color: 'var(--gray-700)',
+            },
+            input: {
+                padding: '16px',
+                fontSize: '1rem',
+                border: '2px solid var(--gray-200)',
+                borderRadius: '12px',
+                outline: 'none',
+                transition: 'border-color 0.2s',
+                fontFamily: 'inherit',
+            },
+            primaryButton: {
+                backgroundColor: 'var(--green-500)',
+                color: 'white',
+                border: 'none',
+                padding: '16px 24px',
+                borderRadius: '12px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontFamily: 'inherit',
+            },
+            centeredContent: {
+                maxWidth: '400px',
+                width: '100%',
+            },
+            assignmentCard: {
+                backgroundColor: 'white',
+                borderRadius: '24px',
+                padding: '40px 30px',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+                textAlign: 'center',
+            },
+            assignmentIcon: {
+                fontSize: '4rem',
+                marginBottom: '20px',
+            },
+            assignmentTitle: {
+                fontFamily: "'Fraunces', serif",
+                fontSize: '1.75rem',
+                fontWeight: '600',
+                marginBottom: '16px',
+                color: 'var(--gray-800)',
+            },
+            groupBadge: {
+                display: 'inline-block',
+                backgroundColor: 'var(--green-100)',
+                color: 'var(--green-700)',
+                padding: '8px 20px',
+                borderRadius: '100px',
+                fontWeight: '600',
+                marginBottom: '16px',
+            },
+            assignmentText: {
+                color: 'var(--gray-600)',
+                lineHeight: '1.6',
+                marginBottom: '24px',
+            },
+            budgetDisplay: {
+                backgroundColor: 'var(--gray-50)',
+                borderRadius: '16px',
+                padding: '20px',
+                marginBottom: '24px',
+            },
+            budgetLabel: {
+                display: 'block',
+                color: 'var(--gray-500)',
+                fontSize: '0.875rem',
+                marginBottom: '4px',
+            },
+            budgetAmount: {
+                fontFamily: "'Fraunces', serif",
+                fontSize: '2.5rem',
+                fontWeight: '700',
+                color: 'var(--green-600)',
+            },
+            shoppingContainer: {
+                minHeight: '100vh',
+                paddingBottom: '200px',
+            },
+            shoppingHeader: {
+                position: 'sticky',
+                top: 0,
+                backgroundColor: 'white',
+                padding: '16px 20px',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                zIndex: 100,
+            },
+            headerTop: {
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '12px',
+            },
+            shoppingTitle: {
+                fontFamily: "'Fraunces', serif",
+                fontSize: '1.5rem',
+                fontWeight: '700',
+            },
+            titleAccent: {
+                color: 'var(--green-600)',
+            },
+            modeBadge: {
+                backgroundColor: 'var(--gray-100)',
+                padding: '6px 12px',
+                borderRadius: '100px',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+            },
+            budgetBar: {
+                backgroundColor: 'var(--gray-50)',
+                borderRadius: '12px',
+                padding: '12px',
+            },
+            budgetInfo: {
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '8px',
+            },
+            budgetText: {
+                color: 'var(--gray-600)',
+                fontSize: '0.875rem',
+            },
+            budgetValue: {
+                fontFamily: "'Fraunces', serif",
+                fontSize: '1.5rem',
+                fontWeight: '700',
+            },
+            progressBarBg: {
+                height: '8px',
+                backgroundColor: 'var(--gray-200)',
+                borderRadius: '100px',
+                overflow: 'hidden',
+                marginBottom: '6px',
+            },
+            progressBarFill: {
+                height: '100%',
+                backgroundColor: 'var(--green-500)',
+                borderRadius: '100px',
+                transition: 'width 0.3s ease',
+            },
+            spentText: {
+                fontSize: '0.75rem',
+                color: 'var(--gray-500)',
+                textAlign: 'right',
+            },
+            productGrid: {
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                gap: '16px',
+                padding: '20px',
+            },
+            productCard: {
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                padding: '16px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                transition: 'all 0.2s',
+                position: 'relative',
+            },
+            inCartBadge: {
+                position: 'absolute',
+                top: '8px',
+                right: '8px',
+                backgroundColor: 'var(--green-500)',
+                color: 'white',
+                fontSize: '0.65rem',
+                fontWeight: '600',
+                padding: '4px 8px',
+                borderRadius: '100px',
+            },
+            productEmoji: {
+                fontSize: '3rem',
+                textAlign: 'center',
+                marginBottom: '8px',
+            },
+            productInfo: {
+                textAlign: 'center',
+            },
+            productName: {
+                fontSize: '1rem',
+                fontWeight: '600',
+                marginBottom: '8px',
+                color: 'var(--gray-800)',
+            },
+            qualityBadge: {
+                display: 'inline-flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                border: '1px solid',
+                marginBottom: '8px',
+            },
+            qualityText: {
+                fontSize: '0.7rem',
+                fontWeight: '600',
+            },
+            qualityScore: {
+                fontSize: '0.85rem',
+                fontWeight: '700',
+            },
+            expiryInfo: {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                marginBottom: '8px',
+            },
+            expiryIcon: {
+                fontSize: '0.75rem',
+            },
+            expiryText: {
+                fontSize: '0.7rem',
+                color: 'var(--gray-500)',
+            },
+            priceTag: {
+                fontFamily: "'Fraunces', serif",
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                color: 'var(--gray-800)',
+                marginBottom: '12px',
+            },
+            addButton: {
+                width: '100%',
+                padding: '10px',
+                border: 'none',
+                borderRadius: '8px',
+                color: 'white',
+                fontWeight: '600',
+                fontSize: '0.875rem',
+                transition: 'all 0.2s',
+                fontFamily: 'inherit',
+            },
+            cartSummary: {
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                backgroundColor: 'white',
+                borderTopLeftRadius: '24px',
+                borderTopRightRadius: '24px',
+                boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
+                padding: '20px',
+                maxHeight: '50vh',
+                overflow: 'auto',
+            },
+            cartHeader: {
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '12px',
+            },
+            cartTitle: {
+                fontWeight: '600',
+                fontSize: '1rem',
+            },
+            cartTotal: {
+                fontFamily: "'Fraunces', serif",
+                fontSize: '1.25rem',
+                fontWeight: '700',
+                color: 'var(--green-600)',
+            },
+            cartItems: {
+                marginBottom: '16px',
+            },
+            cartItem: {
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '8px 0',
+                borderBottom: '1px solid var(--gray-100)',
+                fontSize: '0.875rem',
+            },
+            cartItemRight: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+            },
+            removeButton: {
+                backgroundColor: 'var(--red-100)',
+                color: 'var(--red-500)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '24px',
+                height: '24px',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+            },
+            checkoutButton: {
+                width: '100%',
+                backgroundColor: 'var(--green-500)',
+                color: 'white',
+                border: 'none',
+                padding: '16px',
+                borderRadius: '12px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+            },
+            emptyCart: {
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                backgroundColor: 'var(--gray-100)',
+                padding: '20px',
+                textAlign: 'center',
+                color: 'var(--gray-500)',
+            },
+            resultsContainer: {
+                maxWidth: '500px',
+                width: '100%',
+                padding: '20px',
+            },
+            resultsHeader: {
+                textAlign: 'center',
+                marginBottom: '24px',
+            },
+            checkmark: {
+                width: '60px',
+                height: '60px',
+                backgroundColor: 'var(--green-100)',
+                color: 'var(--green-600)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '2rem',
+                margin: '0 auto 16px',
+            },
+            resultsTitle: {
+                fontFamily: "'Fraunces', serif",
+                fontSize: '2rem',
+                fontWeight: '700',
+                color: 'var(--gray-800)',
+            },
+            resultsSubtitle: {
+                color: 'var(--gray-500)',
+                marginTop: '8px',
+            },
+            summaryCard: {
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                padding: '20px',
+                marginBottom: '16px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+            },
+            summaryTitle: {
+                fontWeight: '600',
+                marginBottom: '16px',
+                color: 'var(--gray-800)',
+            },
+            summaryRow: {
+                display: 'flex',
+                justifyContent: 'space-between',
+                padding: '8px 0',
+                borderBottom: '1px solid var(--gray-100)',
+            },
+            summaryLabel: {
+                color: 'var(--gray-500)',
+            },
+            summaryValue: {
+                fontWeight: '600',
+                color: 'var(--gray-800)',
+            },
+            purchasedList: {
+                maxHeight: '200px',
+                overflow: 'auto',
+            },
+            purchasedItem: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 0',
+                borderBottom: '1px solid var(--gray-100)',
+            },
+            purchasedEmoji: {
+                fontSize: '1.5rem',
+            },
+            purchasedInfo: {
+                flex: 1,
+            },
+            purchasedName: {
+                display: 'block',
+                fontWeight: '600',
+                fontSize: '0.875rem',
+            },
+            purchasedQuality: {
+                fontSize: '0.75rem',
+                color: 'var(--gray-500)',
+            },
+            purchasedPrice: {
+                fontWeight: '600',
+            },
+            metricsGrid: {
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '12px',
+                marginBottom: '16px',
+            },
+            metricBox: {
+                backgroundColor: 'var(--gray-50)',
+                borderRadius: '12px',
+                padding: '16px',
+                textAlign: 'center',
+            },
+            metricValue: {
+                display: 'block',
+                fontFamily: "'Fraunces', serif",
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: 'var(--green-600)',
+            },
+            metricLabel: {
+                fontSize: '0.7rem',
+                color: 'var(--gray-500)',
+            },
+            preferenceNote: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor: 'var(--yellow-100)',
+                padding: '12px',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+            },
+            noteIcon: {
+                fontSize: '1rem',
+            },
+            submitButton: {
+                width: '100%',
+                backgroundColor: 'var(--green-500)',
+                color: 'white',
+                border: 'none',
+                padding: '18px',
+                borderRadius: '12px',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                marginTop: '8px',
+            },
+            submittedMessage: {
+                backgroundColor: 'var(--green-100)',
+                color: 'var(--green-700)',
+                padding: '20px',
+                borderRadius: '12px',
+                textAlign: 'center',
+                fontWeight: '600',
+            },
+            submittedIcon: {
+                display: 'block',
+                fontSize: '2rem',
+                marginBottom: '8px',
+            },
+            thankYou: {
+                fontWeight: '400',
+                marginTop: '8px',
+                color: 'var(--green-600)',
+            }
+        };
+
+        // Render
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
