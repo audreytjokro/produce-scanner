@@ -353,7 +353,7 @@
         const ShoppingScreen = ({ group, cart, setCart, onCheckout, budget }) => {
             const [items] = useState(() => createShoppingItems());
             const [sortMode, setSortMode] = useState('default'); // 'default' | 'price-asc' | 'price-desc'
-            const [cartExpanded, setCartExpanded] = useState(true);
+            const [cartExpanded, setCartExpanded] = useState(false);
             const [dragStartY, setDragStartY] = useState(null);
             const showQuality = group === 'experimental';
             
@@ -370,21 +370,27 @@
                 return items;
             })();
 
-            const handleCartTouchStart = (e) => {
-                if (!e.touches || e.touches.length === 0) return;
-                setDragStartY(e.touches[0].clientY);
+            const startDrag = (clientY) => {
+                setDragStartY(clientY);
             };
 
-            const handleCartTouchEnd = (e) => {
-                if (dragStartY == null || !e.changedTouches || e.changedTouches.length === 0) return;
-                const endY = e.changedTouches[0].clientY;
-                const delta = endY - dragStartY;
+            const endDrag = (clientY) => {
+                if (dragStartY == null) return;
+                const delta = clientY - dragStartY;
                 if (delta > 30) {
                     setCartExpanded(false); // swipe down to collapse
                 } else if (delta < -30) {
                     setCartExpanded(true); // swipe up to expand
                 }
                 setDragStartY(null);
+            };
+
+            const handleCartPointerDown = (e) => {
+                startDrag(e.clientY);
+            };
+
+            const handleCartPointerUp = (e) => {
+                endDrag(e.clientY);
             };
 
             const toggleCartExpanded = () => {
@@ -479,8 +485,8 @@
                                     ? 'translateY(0)'
                                     : 'translateY(calc(100% - 64px))',
                             }}
-                            onTouchStart={handleCartTouchStart}
-                            onTouchEnd={handleCartTouchEnd}
+                            onPointerDown={handleCartPointerDown}
+                            onPointerUp={handleCartPointerUp}
                         >
                             <div style={styles.cartHandle} onClick={toggleCartExpanded}></div>
                             <div style={styles.cartHeader}>
@@ -886,7 +892,7 @@
             },
             shoppingContainer: {
                 minHeight: '100vh',
-                paddingBottom: '200px',
+                paddingBottom: '360px',
             },
             shoppingHeader: {
                 position: 'sticky',
