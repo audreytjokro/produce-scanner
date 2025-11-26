@@ -981,8 +981,6 @@
                 borderTopRightRadius: '24px',
                 boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
                 padding: '20px',
-                maxHeight: '50vh',
-                overflow: 'auto',
             },
             cartHeader: {
                 display: 'flex',
@@ -1002,6 +1000,9 @@
             },
             cartItems: {
                 marginBottom: '16px',
+                maxHeight: '32vh',
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
             },
             cartItem: {
                 display: 'flex',
