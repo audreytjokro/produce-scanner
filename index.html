@@ -354,7 +354,6 @@
             const [items] = useState(() => createShoppingItems());
             const [sortMode, setSortMode] = useState('default'); // 'default' | 'price-asc' | 'price-desc'
             const [cartExpanded, setCartExpanded] = useState(false);
-            const [dragStartY, setDragStartY] = useState(null);
             const showQuality = group === 'experimental';
             
             const totalSpent = cart.reduce((sum, item) => sum + item.price, 0);
@@ -369,31 +368,6 @@
                 }
                 return items;
             })();
-
-            const startDrag = (clientY) => {
-                setDragStartY(clientY);
-            };
-
-            const endDrag = (clientY) => {
-                if (dragStartY == null) return;
-                const delta = clientY - dragStartY;
-                if (delta > 30) {
-                    setCartExpanded(false); // swipe down to collapse
-                } else if (delta < -30) {
-                    setCartExpanded(true); // swipe up to expand
-                }
-                setDragStartY(null);
-            };
-
-            const handleCartTouchStart = (e) => {
-                if (!e.touches || e.touches.length === 0) return;
-                startDrag(e.touches[0].clientY);
-            };
-
-            const handleCartTouchEnd = (e) => {
-                if (!e.changedTouches || e.changedTouches.length === 0) return;
-                endDrag(e.changedTouches[0].clientY);
-            };
 
             const toggleCartExpanded = () => {
                 setCartExpanded(prev => !prev);
@@ -488,12 +462,14 @@
                                     : 'translateY(calc(100% - 64px))',
                             }}
                         >
-                            <div
-                                style={styles.cartHandle}
+                            <button
+                                type="button"
+                                style={styles.cartToggleButton}
                                 onClick={toggleCartExpanded}
-                                onTouchStart={handleCartTouchStart}
-                                onTouchEnd={handleCartTouchEnd}
-                            ></div>
+                            >
+                                <span>Click on me to toggle!</span>
+                                <span style={styles.cartToggleArrow}>⬇️</span>
+                            </button>
                             <div style={styles.cartHeader}>
                                 <span style={styles.cartTitle}>🛒 Your Cart ({cart.length})</span>
                                 <span style={styles.cartTotal}>${totalSpent.toFixed(2)}</span>
@@ -1085,6 +1061,26 @@
                 boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
                 padding: '20px',
                 transition: 'transform 0.25s ease',
+            },
+            cartToggleButton: {
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '10px 16px',
+                borderRadius: '999px',
+                border: '1px solid var(--gray-200)',
+                backgroundColor: 'var(--gray-50)',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                color: 'var(--gray-800)',
+                cursor: 'pointer',
+                marginBottom: '12px',
+                fontFamily: 'inherit',
+            },
+            cartToggleArrow: {
+                fontSize: '1.1rem',
             },
             cartHeader: {
                 display: 'flex',
