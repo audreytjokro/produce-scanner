@@ -729,18 +729,13 @@
                             </div>
                         </div>
 
-                        {!submitted ? (
-                            <button 
-                                onClick={onSubmit} 
-                                style={{
-                                    ...styles.submitButton,
-                                    opacity: isSubmitting ? 0.7 : 1
-                                }}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Saving...' : 'Submit Results 📤'}
-                            </button>
-                        ) : (
+                        {!submitted && isSubmitting && (
+                            <div style={styles.submittedMessage}>
+                                <span style={styles.submittedIcon}>⏳</span>
+                                <span>Saving your results...</span>
+                            </div>
+                        )}
+                        {submitted && (
                             <div className="animate-fade-in" style={styles.submittedMessage}>
                                 <span style={styles.submittedIcon}>✅</span>
                                 <span>Results saved successfully!</span>
@@ -776,7 +771,9 @@
             };
 
             const handleCheckout = () => {
+                // Move to results screen and automatically submit the data
                 setScreen('results');
+                handleSubmit();
             };
 
             const openContact = () => {
