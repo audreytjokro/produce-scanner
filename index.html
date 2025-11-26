@@ -102,6 +102,7 @@
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-q4s2BEDcXRYGH-Jxd9pFZ0EarLV3DPWjEPA3QvyIhiDhdJy9ph1HIGfz5eAyH--aiw/exec'; // Replace with your Google Apps Script URL
         const MIN_BUDGET = 7;
         const MAX_BUDGET = 20;
+        const FEEDBACK_EMAILS = 'vv266@cornell.edu,act245@cornell.edu';
 
         const generateBudget = () => {
             // Random whole-dollar amount between MIN_BUDGET and MAX_BUDGET (inclusive)
@@ -209,9 +210,29 @@
 
                         <div className="animate-slide-up stagger-2" style={styles.welcomeCard}>
                             <h2 style={styles.welcomeTitle}>Welcome to the Experiment!</h2>
+                            <div style={styles.researchNotice}>
+                                <p style={styles.researchNoticeText}>
+                                    Hi there! This is a short research-style experiment for a class project. Your choices will be
+                                    recorded anonymously and used only for analysis. There are no right or wrong answers &mdash;
+                                    just shop as you normally would.
+                                </p>
+                                <p style={styles.researchNoticeText}>
+                                    This activity collects your name (or nickname), the items you select, and your spending decisions.
+                                    Your responses are used only for a student project and will not be shared outside the course.
+                                </p>
+                                <p style={styles.researchNoticeText}>
+                                    Note: During this activity, you may or may not see additional information about the quality or
+                                    pricing of produce. This is intentional &mdash; participants are shown different versions as
+                                    part of the study design.
+                                </p>
+                            </div>
+                            <p style={styles.welcomeSubtleText}>
+                                If you have any questions, concerns, or feedback, please click Contact Us to let us know.
+                            </p>
                             <p style={styles.welcomeText}>
-                                You'll be shopping for produce with a ${budget.toFixed(2)} budget. 
-                                Make your selections and see what you take home!
+                                You'll be shopping for produce with a{' '}
+                                <span style={styles.budgetHighlight}>${budget.toFixed(2)}</span>{' '}
+                                budget. Make your selections and see what you take home!
                             </p>
                             
                             <form onSubmit={handleSubmit} style={styles.form}>
@@ -510,6 +531,110 @@
             );
         };
 
+        // Contact / Feedback Screen
+        const ContactScreen = ({ onBack }) => {
+            const [name, setName] = useState('');
+            const [email, setEmail] = useState('');
+            const [message, setMessage] = useState('');
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [submitted, setSubmitted] = useState(false);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!message.trim()) return;
+
+                setIsSubmitting(true);
+
+                const payload = {
+                    type: 'feedback',
+                    timestamp: new Date().toISOString(),
+                    name: name.trim(),
+                    email: email.trim(),
+                    message: message.trim(),
+                };
+
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    setSubmitted(true);
+                } catch (err) {
+                    console.error('Error sending feedback', err);
+                    setSubmitted(true);
+                } finally {
+                    setIsSubmitting(false);
+                }
+            };
+
+            return (
+                <div style={styles.screenContainer}>
+                    <div style={styles.contactWrapper}>
+                        <button type="button" onClick={onBack} style={styles.backButton}>
+                            ← Back
+                        </button>
+                        <div className="animate-fade-in" style={styles.contactCard}>
+                            <h2 style={styles.contactTitle}>Contact Us</h2>
+                            <p style={styles.contactSubtitle}>
+                                Have feedback, questions, or concerns? Send us a note and it will be emailed to the research team.
+                            </p>
+                            <form onSubmit={handleSubmit} style={styles.form}>
+                                <label style={styles.label}>
+                                    Name (optional)
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        style={styles.input}
+                                        placeholder="Your name or nickname"
+                                    />
+                                </label>
+                                <label style={styles.label}>
+                                    Email (optional)
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        style={styles.input}
+                                        placeholder="you@example.com"
+                                    />
+                                </label>
+                                <label style={styles.label}>
+                                    Message
+                                    <textarea
+                                        value={message}
+                                        onChange={(e) => setMessage(e.target.value)}
+                                        style={styles.textArea}
+                                        placeholder="Share any feedback, questions, or concerns here..."
+                                        rows={4}
+                                        required
+                                    />
+                                </label>
+                                <button
+                                    type="submit"
+                                    style={{
+                                        ...styles.primaryButton,
+                                        opacity: isSubmitting || !message.trim() ? 0.7 : 1,
+                                        cursor: isSubmitting || !message.trim() ? 'not-allowed' : 'pointer',
+                                    }}
+                                    disabled={isSubmitting || !message.trim()}
+                                >
+                                    {isSubmitting ? 'Sending...' : 'Send Feedback'}
+                                </button>
+                                {submitted && (
+                                    <p style={styles.contactThankYou}>
+                                        Thank you! Your feedback has been recorded.
+                                    </p>
+                                )}
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // Results Screen
         const ResultsScreen = ({ userName, group, cart, budget, onSubmit, isSubmitting, submitted }) => {
             const totalSpent = cart.reduce((sum, item) => sum + item.price, 0);
@@ -637,6 +762,7 @@
             const [isSubmitting, setIsSubmitting] = useState(false);
             const [submitted, setSubmitted] = useState(false);
             const [budget] = useState(() => generateBudget());
+            const [previousScreen, setPreviousScreen] = useState(null);
 
             const handleStart = (name) => {
                 setUserName(name);
@@ -652,6 +778,15 @@
 
             const handleCheckout = () => {
                 setScreen('results');
+            };
+
+            const openContact = () => {
+                setPreviousScreen(screen);
+                setScreen('contact');
+            };
+
+            const closeContact = () => {
+                setScreen(previousScreen || 'welcome');
             };
 
             const handleSubmit = async () => {
@@ -705,6 +840,15 @@
 
             return (
                 <>
+                    {screen !== 'contact' && (
+                        <button
+                            type="button"
+                            style={styles.globalContactButton}
+                            onClick={openContact}
+                        >
+                            Contact Us
+                        </button>
+                    )}
                     {screen === 'welcome' && <WelcomeScreen onStart={handleStart} budget={budget} />}
                     {screen === 'assignment' && <GroupAssignmentScreen group={group} budget={budget} onContinue={handleContinueToShop} />}
                     {screen === 'shopping' && (
@@ -715,6 +859,9 @@
                             onCheckout={handleCheckout}
                             budget={budget}
                         />
+                    )}
+                    {screen === 'contact' && (
+                        <ContactScreen onBack={closeContact} />
                     )}
                     {screen === 'results' && (
                         <ResultsScreen 
@@ -786,15 +933,44 @@
                 lineHeight: '1.6',
                 marginBottom: '24px',
             },
+            welcomeSubtleText: {
+                color: 'var(--gray-500)',
+                fontSize: '0.9rem',
+                lineHeight: '1.5',
+                marginTop: '4px',
+                marginBottom: '20px',
+                textAlign: 'center',
+            },
+            researchNotice: {
+                backgroundColor: 'var(--gray-50)',
+                borderRadius: '12px',
+                padding: '12px 14px',
+                marginBottom: '16px',
+                textAlign: 'left',
+            },
+            researchNoticeText: {
+                fontSize: '0.85rem',
+                color: 'var(--gray-600)',
+                lineHeight: '1.5',
+                marginBottom: '8px',
+            },
+            budgetHighlight: {
+                fontWeight: '700',
+                color: 'var(--green-600)',
+            },
             form: {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '16px',
             },
             label: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
                 textAlign: 'left',
                 fontWeight: '500',
                 color: 'var(--gray-700)',
+                fontSize: '0.9rem',
             },
             input: {
                 padding: '16px',
@@ -1082,6 +1258,20 @@
             cartToggleArrow: {
                 fontSize: '1.1rem',
             },
+            globalContactButton: {
+                position: 'fixed',
+                top: '16px',
+                right: '16px',
+                zIndex: 200,
+                padding: '8px 14px',
+                borderRadius: '999px',
+                border: '1px solid var(--gray-200)',
+                backgroundColor: 'white',
+                fontSize: '0.8rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+            },
             cartHeader: {
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -1199,6 +1389,55 @@
                 fontWeight: '600',
                 marginBottom: '16px',
                 color: 'var(--gray-800)',
+            },
+            contactTitle: {
+                fontFamily: "'Fraunces', serif",
+                fontSize: '1.6rem',
+                fontWeight: '600',
+                marginBottom: '8px',
+                color: 'var(--gray-800)',
+            },
+            contactSubtitle: {
+                color: 'var(--gray-600)',
+                marginBottom: '16px',
+                fontSize: '0.9rem',
+            },
+            contactWrapper: {
+                width: '100%',
+                maxWidth: '480px',
+                padding: '20px',
+            },
+            contactCard: {
+                backgroundColor: 'white',
+                borderRadius: '24px',
+                padding: '28px 24px 24px',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+            },
+            textArea: {
+                padding: '12px',
+                fontSize: '1rem',
+                border: '2px solid var(--gray-200)',
+                borderRadius: '12px',
+                outline: 'none',
+                transition: 'border-color 0.2s',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+                minHeight: '120px',
+            },
+            contactThankYou: {
+                marginTop: '12px',
+                fontSize: '0.85rem',
+                color: 'var(--green-700)',
+            },
+            backButton: {
+                marginBottom: '8px',
+                background: 'none',
+                border: 'none',
+                color: 'var(--gray-600)',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                padding: 0,
+                fontFamily: 'inherit',
             },
             summaryRow: {
                 display: 'flex',
