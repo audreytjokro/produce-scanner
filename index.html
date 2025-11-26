@@ -100,7 +100,14 @@
 
         // ============ CONFIGURATION ============
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-q4s2BEDcXRYGH-Jxd9pFZ0EarLV3DPWjEPA3QvyIhiDhdJy9ph1HIGfz5eAyH--aiw/exec'; // Replace with your Google Apps Script URL
-        const BUDGET = 20.00;
+        const MIN_BUDGET = 5.0;
+        const MAX_BUDGET = 20.0;
+
+        const generateBudget = () => {
+            const amount = Math.random() * (MAX_BUDGET - MIN_BUDGET) + MIN_BUDGET;
+            // round to nearest cent
+            return Math.round(amount * 100) / 100;
+        };
 
         // Produce items with quality variants
         const PRODUCE_ITEMS = [
@@ -170,7 +177,7 @@
         // ============ COMPONENTS ============
 
         // Welcome Screen
-        const WelcomeScreen = ({ onStart }) => {
+        const WelcomeScreen = ({ onStart, budget }) => {
             const [name, setName] = useState('');
 
             const handleSubmit = (e) => {
@@ -203,7 +210,7 @@
                         <div className="animate-slide-up stagger-2" style={styles.welcomeCard}>
                             <h2 style={styles.welcomeTitle}>Welcome to the Experiment!</h2>
                             <p style={styles.welcomeText}>
-                                You'll be shopping for produce with a ${BUDGET.toFixed(2)} budget. 
+                                You'll be shopping for produce with a ${budget.toFixed(2)} budget. 
                                 Make your selections and see what you take home!
                             </p>
                             
@@ -236,7 +243,7 @@
         };
 
         // Group Assignment Screen
-        const GroupAssignmentScreen = ({ group, onContinue }) => {
+        const GroupAssignmentScreen = ({ group, budget, onContinue }) => {
             return (
                 <div style={styles.screenContainer}>
                     <div style={styles.centeredContent}>
@@ -256,7 +263,7 @@
                             </p>
                             <div style={styles.budgetDisplay}>
                                 <span style={styles.budgetLabel}>Your Budget</span>
-                                <span style={styles.budgetAmount}>${BUDGET.toFixed(2)}</span>
+                                <span style={styles.budgetAmount}>${budget.toFixed(2)}</span>
                             </div>
                             <button onClick={onContinue} style={styles.primaryButton}>
                                 Let's Go! →
@@ -343,12 +350,12 @@
         };
 
         // Shopping Screen
-        const ShoppingScreen = ({ group, cart, setCart, onCheckout }) => {
+        const ShoppingScreen = ({ group, cart, setCart, onCheckout, budget }) => {
             const [items] = useState(() => createShoppingItems());
             const showQuality = group === 'experimental';
             
             const totalSpent = cart.reduce((sum, item) => sum + item.price, 0);
-            const remaining = BUDGET - totalSpent;
+            const remaining = budget - totalSpent;
 
             const addToCart = (item) => {
                 if (remaining >= item.price && !cart.find(c => c.id === item.id)) {
@@ -386,12 +393,12 @@
                                 <div 
                                     style={{
                                         ...styles.progressBarFill,
-                                        width: `${(totalSpent / BUDGET) * 100}%`
+                                        width: `${(totalSpent / budget) * 100}%`
                                     }}
                                 />
                             </div>
                             <div style={styles.spentText}>
-                                ${totalSpent.toFixed(2)} of ${BUDGET.toFixed(2)} spent
+                                ${totalSpent.toFixed(2)} of ${budget.toFixed(2)} spent
                             </div>
                         </div>
                     </div>
@@ -455,9 +462,9 @@
         };
 
         // Results Screen
-        const ResultsScreen = ({ userName, group, cart, onSubmit, isSubmitting, submitted }) => {
+        const ResultsScreen = ({ userName, group, cart, budget, onSubmit, isSubmitting, submitted }) => {
             const totalSpent = cart.reduce((sum, item) => sum + item.price, 0);
-            const remaining = BUDGET - totalSpent;
+            const remaining = budget - totalSpent;
             const avgQuality = cart.length > 0 
                 ? Math.round(cart.reduce((sum, item) => sum + item.qualityScore, 0) / cart.length)
                 : 0;
@@ -497,7 +504,7 @@
                             </div>
                             <div style={styles.summaryRow}>
                                 <span style={styles.summaryLabel}>Budget Given</span>
-                                <span style={styles.summaryValue}>${BUDGET.toFixed(2)}</span>
+                                <span style={styles.summaryValue}>${budget.toFixed(2)}</span>
                             </div>
                             <div style={styles.summaryRow}>
                                 <span style={styles.summaryLabel}>Amount Spent</span>
@@ -580,6 +587,7 @@
             const [cart, setCart] = useState([]);
             const [isSubmitting, setIsSubmitting] = useState(false);
             const [submitted, setSubmitted] = useState(false);
+            const [budget] = useState(() => generateBudget());
 
             const handleStart = (name) => {
                 setUserName(name);
@@ -611,9 +619,9 @@
                     timestamp: new Date().toISOString(),
                     userName,
                     group,
-                    budgetGiven: BUDGET,
+                    budgetGiven: budget,
                     totalSpent: totalSpent.toFixed(2),
-                    remaining: (BUDGET - totalSpent).toFixed(2),
+                    remaining: (budget - totalSpent).toFixed(2),
                     itemCount: cart.length,
                     items: cart.map(i => `${i.name} (${i.quality}, $${i.price.toFixed(2)}, ${i.qualityScore}%)`).join('; '),
                     avgQualityScore: avgQuality,
@@ -648,14 +656,15 @@
 
             return (
                 <>
-                    {screen === 'welcome' && <WelcomeScreen onStart={handleStart} />}
-                    {screen === 'assignment' && <GroupAssignmentScreen group={group} onContinue={handleContinueToShop} />}
+                    {screen === 'welcome' && <WelcomeScreen onStart={handleStart} budget={budget} />}
+                    {screen === 'assignment' && <GroupAssignmentScreen group={group} budget={budget} onContinue={handleContinueToShop} />}
                     {screen === 'shopping' && (
                         <ShoppingScreen 
                             group={group} 
                             cart={cart} 
                             setCart={setCart} 
-                            onCheckout={handleCheckout} 
+                            onCheckout={handleCheckout}
+                            budget={budget}
                         />
                     )}
                     {screen === 'results' && (
@@ -663,6 +672,7 @@
                             userName={userName}
                             group={group}
                             cart={cart}
+                            budget={budget}
                             onSubmit={handleSubmit}
                             isSubmitting={isSubmitting}
                             submitted={submitted}
