@@ -100,13 +100,13 @@
 
         // ============ CONFIGURATION ============
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-q4s2BEDcXRYGH-Jxd9pFZ0EarLV3DPWjEPA3QvyIhiDhdJy9ph1HIGfz5eAyH--aiw/exec'; // Replace with your Google Apps Script URL
-        const MIN_BUDGET = 5.0;
-        const MAX_BUDGET = 20.0;
+        const MIN_BUDGET = 7;
+        const MAX_BUDGET = 20;
 
         const generateBudget = () => {
-            const amount = Math.random() * (MAX_BUDGET - MIN_BUDGET) + MIN_BUDGET;
-            // round to nearest cent
-            return Math.round(amount * 100) / 100;
+            // Random whole-dollar amount between MIN_BUDGET and MAX_BUDGET (inclusive)
+            const amount = Math.floor(Math.random() * (MAX_BUDGET - MIN_BUDGET + 1)) + MIN_BUDGET;
+            return amount;
         };
 
         // Produce items with quality variants
