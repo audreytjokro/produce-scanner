@@ -113,45 +113,45 @@
         // Produce items with quality variants
         const PRODUCE_ITEMS = [
             { id: 1, name: 'Strawberries', emoji: '🍓', variants: [
-                { quality: 'Fresh', price: 4.99, qualityScore: 95, daysToExpire: '5-7 days' },
-                { quality: 'Slightly Bruised', price: 2.49, qualityScore: 60, daysToExpire: '2-3 days' }
+                { quality: 'Fresh', price: 4.99, qualityScore: 95, daysToExpire: '5-7 days', previousPrice: 5.99, priceHistoryDays: 1, discountPercent: null, discountExpiresIn: null },
+                { quality: 'Slightly Bruised', price: 2.49, qualityScore: 60, daysToExpire: '2-3 days', previousPrice: 3.49, priceHistoryDays: 2, discountPercent: 20, discountExpiresIn: 7200 }
             ]},
             { id: 2, name: 'Avocados', emoji: '🥑', variants: [
-                { quality: 'Perfectly Ripe', price: 2.99, qualityScore: 98, daysToExpire: '2-3 days' },
-                { quality: 'Unripe', price: 1.99, qualityScore: 70, daysToExpire: '5-7 days' },
-                { quality: 'Overripe', price: 0.99, qualityScore: 40, daysToExpire: '1 day' }
+                { quality: 'Perfectly Ripe', price: 2.99, qualityScore: 98, daysToExpire: '2-3 days', previousPrice: 3.49, priceHistoryDays: 1, discountPercent: null, discountExpiresIn: null },
+                { quality: 'Unripe', price: 1.99, qualityScore: 70, daysToExpire: '5-7 days', previousPrice: 2.49, priceHistoryDays: 1, discountPercent: null, discountExpiresIn: null },
+                { quality: 'Overripe', price: 0.99, qualityScore: 40, daysToExpire: '1 day', previousPrice: 1.99, priceHistoryDays: 1, discountPercent: 30, discountExpiresIn: 3600 }
             ]},
             { id: 3, name: 'Bananas', emoji: '🍌', variants: [
-                { quality: 'Just Ripe', price: 1.99, qualityScore: 92, daysToExpire: '4-5 days' },
-                { quality: 'Spotted', price: 0.99, qualityScore: 55, daysToExpire: '1-2 days' }
+                { quality: 'Just Ripe', price: 1.99, qualityScore: 92, daysToExpire: '4-5 days', previousPrice: 2.49, priceHistoryDays: 2, discountPercent: null, discountExpiresIn: null },
+                { quality: 'Spotted', price: 0.99, qualityScore: 55, daysToExpire: '1-2 days', previousPrice: 1.49, priceHistoryDays: 1, discountPercent: 25, discountExpiresIn: 5400 }
             ]},
             { id: 4, name: 'Apples', emoji: '🍎', variants: [
-                { quality: 'Crisp & Fresh', price: 3.49, qualityScore: 96, daysToExpire: '2+ weeks' },
-                { quality: 'Minor Bruising', price: 1.79, qualityScore: 65, daysToExpire: '5-7 days' }
+                { quality: 'Crisp & Fresh', price: 3.49, qualityScore: 96, daysToExpire: '2+ weeks', previousPrice: 3.99, priceHistoryDays: 1, discountPercent: null, discountExpiresIn: null },
+                { quality: 'Minor Bruising', price: 1.79, qualityScore: 65, daysToExpire: '5-7 days', previousPrice: 2.29, priceHistoryDays: 1, discountPercent: 15, discountExpiresIn: 10800 }
             ]},
             { id: 5, name: 'Oranges', emoji: '🍊', variants: [
-                { quality: 'Peak Freshness', price: 3.99, qualityScore: 94, daysToExpire: '10-14 days' },
-                { quality: 'Soft Spots', price: 1.99, qualityScore: 58, daysToExpire: '3-4 days' }
+                { quality: 'Peak Freshness', price: 3.99, qualityScore: 94, daysToExpire: '10-14 days', previousPrice: 4.49, priceHistoryDays: 1, discountPercent: null, discountExpiresIn: null },
+                { quality: 'Soft Spots', price: 1.99, qualityScore: 58, daysToExpire: '3-4 days', previousPrice: 2.99, priceHistoryDays: 2, discountPercent: 20, discountExpiresIn: 7200 }
             ]},
             { id: 6, name: 'Blueberries', emoji: '🫐', variants: [
-                { quality: 'Premium Fresh', price: 5.99, qualityScore: 97, daysToExpire: '7-10 days' },
-                { quality: 'Some Soft', price: 2.99, qualityScore: 52, daysToExpire: '2-3 days' }
+                { quality: 'Premium Fresh', price: 5.99, qualityScore: 97, daysToExpire: '7-10 days', previousPrice: 6.99, priceHistoryDays: 1, discountPercent: null, discountExpiresIn: null },
+                { quality: 'Some Soft', price: 2.99, qualityScore: 52, daysToExpire: '2-3 days', previousPrice: 3.99, priceHistoryDays: 1, discountPercent: 25, discountExpiresIn: 3600 }
             ]},
             { id: 7, name: 'Tomatoes', emoji: '🍅', variants: [
-                { quality: 'Vine Ripe', price: 3.49, qualityScore: 93, daysToExpire: '5-7 days' },
-                { quality: 'Slightly Firm', price: 2.29, qualityScore: 75, daysToExpire: '7-10 days' }
+                { quality: 'Vine Ripe', price: 3.49, qualityScore: 93, daysToExpire: '5-7 days', previousPrice: 3.99, priceHistoryDays: 1, discountPercent: null, discountExpiresIn: null },
+                { quality: 'Slightly Firm', price: 2.29, qualityScore: 75, daysToExpire: '7-10 days', previousPrice: 2.79, priceHistoryDays: 1, discountPercent: 18, discountExpiresIn: 9000 }
             ]},
             { id: 8, name: 'Lemons', emoji: '🍋', variants: [
-                { quality: 'Bright & Firm', price: 1.49, qualityScore: 95, daysToExpire: '2-3 weeks' },
-                { quality: 'Some Blemishes', price: 0.79, qualityScore: 68, daysToExpire: '1 week' }
+                { quality: 'Bright & Firm', price: 1.49, qualityScore: 95, daysToExpire: '2-3 weeks', previousPrice: 1.79, priceHistoryDays: 2, discountPercent: null, discountExpiresIn: null },
+                { quality: 'Some Blemishes', price: 0.79, qualityScore: 68, daysToExpire: '1 week', previousPrice: 0.99, priceHistoryDays: 1, discountPercent: 20, discountExpiresIn: 4500 }
             ]},
             { id: 9, name: 'Grapes', emoji: '🍇', variants: [
-                { quality: 'Plump & Sweet', price: 4.99, qualityScore: 96, daysToExpire: '7-10 days' },
-                { quality: 'Some Wrinkled', price: 2.49, qualityScore: 50, daysToExpire: '2-3 days' }
+                { quality: 'Plump & Sweet', price: 4.99, qualityScore: 96, daysToExpire: '7-10 days', previousPrice: 5.49, priceHistoryDays: 1, discountPercent: null, discountExpiresIn: null },
+                { quality: 'Some Wrinkled', price: 2.49, qualityScore: 50, daysToExpire: '2-3 days', previousPrice: 3.49, priceHistoryDays: 1, discountPercent: 30, discountExpiresIn: 1800 }
             ]},
             { id: 10, name: 'Mangoes', emoji: '🥭', variants: [
-                { quality: 'Ready to Eat', price: 2.99, qualityScore: 94, daysToExpire: '3-4 days' },
-                { quality: 'Needs Ripening', price: 1.99, qualityScore: 72, daysToExpire: '5-7 days' }
+                { quality: 'Ready to Eat', price: 2.99, qualityScore: 94, daysToExpire: '3-4 days', previousPrice: 3.49, priceHistoryDays: 1, discountPercent: null, discountExpiresIn: null },
+                { quality: 'Needs Ripening', price: 1.99, qualityScore: 72, daysToExpire: '5-7 days', previousPrice: 2.49, priceHistoryDays: 2, discountPercent: 20, discountExpiresIn: 6300 }
             ]}
         ];
 
@@ -168,7 +168,11 @@
                         quality: variant.quality,
                         price: variant.price,
                         qualityScore: variant.qualityScore,
-                        daysToExpire: variant.daysToExpire
+                        daysToExpire: variant.daysToExpire,
+                        previousPrice: variant.previousPrice,
+                        priceHistoryDays: variant.priceHistoryDays,
+                        discountPercent: variant.discountPercent,
+                        discountExpiresIn: variant.discountExpiresIn ? variant.discountExpiresIn + Date.now() : null
                     });
                 });
             });
@@ -317,6 +321,70 @@
             );
         };
 
+        // Price History Component
+        const PriceHistory = ({ previousPrice, priceHistoryDays }) => {
+            if (!previousPrice || previousPrice <= 0) return null;
+            
+            const timeText = priceHistoryDays === 1 ? 'yesterday' : `${priceHistoryDays} days ago`;
+            
+            return (
+                <div style={styles.priceHistory}>
+                    <span style={styles.priceHistoryText}>
+                        was ${previousPrice.toFixed(2)} {timeText}
+                    </span>
+                </div>
+            );
+        };
+
+        // Discount Countdown Component
+        const DiscountCountdown = ({ discountPercent, discountExpiresIn }) => {
+            const [timeLeft, setTimeLeft] = useState(null);
+
+            useEffect(() => {
+                if (!discountExpiresIn) return;
+
+                const updateCountdown = () => {
+                    const now = Date.now();
+                    const remaining = Math.max(0, discountExpiresIn - now);
+                    
+                    if (remaining <= 0) {
+                        setTimeLeft(null);
+                        return;
+                    }
+
+                    const hours = Math.floor(remaining / 3600000);
+                    const minutes = Math.floor((remaining % 3600000) / 60000);
+                    const seconds = Math.floor((remaining % 60000) / 1000);
+
+                    let timeText = '';
+                    if (hours > 0) {
+                        timeText = `${hours}h ${minutes}m left`;
+                    } else if (minutes > 0) {
+                        timeText = `${minutes}m ${seconds}s left`;
+                    } else {
+                        timeText = `${seconds}s left`;
+                    }
+
+                    setTimeLeft(timeText);
+                };
+
+                updateCountdown();
+                const interval = setInterval(updateCountdown, 1000);
+
+                return () => clearInterval(interval);
+            }, [discountExpiresIn]);
+
+            if (!discountPercent || !timeLeft) return null;
+
+            return (
+                <div style={styles.discountBadge}>
+                    <span style={styles.discountText}>
+                        {discountPercent}% off — {timeLeft}
+                    </span>
+                </div>
+            );
+        };
+
         // Product Card Component
         const ProductCard = ({ item, showQuality, onAdd, disabled, inCart }) => {
             const [isAdding, setIsAdding] = useState(false);
@@ -353,6 +421,14 @@
                             </>
                         )}
                         <div style={styles.priceTag}>${item.price.toFixed(2)}</div>
+                        <PriceHistory 
+                            previousPrice={item.previousPrice} 
+                            priceHistoryDays={item.priceHistoryDays} 
+                        />
+                        <DiscountCountdown 
+                            discountPercent={item.discountPercent} 
+                            discountExpiresIn={item.discountExpiresIn} 
+                        />
                     </div>
                     <button 
                         onClick={handleAdd}
@@ -1209,7 +1285,27 @@
                 fontSize: '1.25rem',
                 fontWeight: '700',
                 color: 'var(--gray-800)',
-                marginBottom: '12px',
+                marginBottom: '8px',
+            },
+            priceHistory: {
+                marginBottom: '6px',
+            },
+            priceHistoryText: {
+                fontSize: '0.7rem',
+                color: 'var(--gray-500)',
+                fontStyle: 'italic',
+            },
+            discountBadge: {
+                backgroundColor: 'var(--orange-100)',
+                color: 'var(--orange-500)',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                marginBottom: '8px',
+                display: 'inline-block',
+            },
+            discountText: {
+                fontSize: '0.7rem',
+                fontWeight: '600',
             },
             addButton: {
                 width: '100%',
