@@ -99,7 +99,7 @@
         const { useState, useEffect, useCallback } = React;
 
         // ============ CONFIGURATION ============
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw-q4s2BEDcXRYGH-Jxd9pFZ0EarLV3DPWjEPA3QvyIhiDhdJy9ph1HIGfz5eAyH--aiw/exec'; // Replace with your Google Apps Script URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzOP6O5UoEJhUY3RUUvTqObk_GDAOm5S8tZJDAbtPZHekfq7QdBLzClegiu1aULCPL9vA/exec'; // Replace with your Google Apps Script URL
         const MIN_BUDGET = 7;
         const MAX_BUDGET = 20;
         const FEEDBACK_EMAILS = 'vv266@cornell.edu,act245@cornell.edu';
@@ -621,7 +621,7 @@
                 setIsSubmitting(true);
 
                 const payload = {
-                    type: 'feedback',
+                    type: 'contact',
                     timestamp: new Date().toISOString(),
                     name: name.trim(),
                     email: email.trim(),
