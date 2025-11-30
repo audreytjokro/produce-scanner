@@ -711,7 +711,7 @@
         };
 
         // Feedback Screen
-        const FeedbackScreen = ({ cart, onContinue }) => {
+        const FeedbackScreen = ({ cart, onContinue, asOverlay = false }) => {
             const [selectedReason, setSelectedReason] = useState('');
             const [otherText, setOtherText] = useState('');
 
@@ -730,8 +730,10 @@
                 }
             };
 
+            const containerStyle = asOverlay ? styles.feedbackOverlay : styles.screenContainer;
+
             return (
-                <div style={styles.screenContainer}>
+                <div style={containerStyle}>
                     <div style={styles.centeredContent}>
                         <div className="animate-fade-in" style={styles.feedbackCard}>
                             <div style={styles.feedbackIcon}>🤔</div>
@@ -944,16 +946,15 @@
             };
 
             const handleCheckout = () => {
-                // Move to results screen and automatically submit the data
+                // Move to results screen first (show results, then collect feedback, then submit)
                 setScreen('results');
-                handleSubmit();
             };
 
             const handleFeedbackContinue = (reason) => {
                 setFeedbackReason(reason);
                 setFeedbackComplete(true);
-                // Submit feedback update
-                handleFeedbackSubmit(reason);
+                // Submit complete data with feedback
+                handleSubmit(reason);
             };
 
             const openContact = () => {
@@ -965,7 +966,7 @@
                 setScreen(previousScreen || 'welcome');
             };
 
-            const handleSubmit = async () => {
+            const handleSubmit = async (feedbackReason = '') => {
                 setIsSubmitting(true);
                 
                 const totalSpent = cart.reduce((sum, item) => sum + item.price, 0);
@@ -975,7 +976,12 @@
                 const highQualityCount = cart.filter(i => i.qualityScore >= 90).length;
                 const lowQualityCount = cart.filter(i => i.qualityScore < 70).length;
 
-                const data = {
+                // Main data for the primary sheet
+                // NOTE: Google Apps Script should check the 'type' field:
+                // - type: 'main' → write to main sheet (Sheet1 or "Main")
+                // - type: 'feedback' → write to feedback sheet ("Feedback" tab)
+                const mainData = {
+                    type: 'main', // Indicates this goes to the main sheet
                     timestamp: new Date().toISOString(),
                     userName,
                     group,
@@ -987,75 +993,60 @@
                     avgQualityScore: avgQuality,
                     highQualityItems: highQualityCount,
                     lowQualityItems: lowQualityCount,
-                    preference: highQualityCount > lowQualityCount ? 'Quality' : highQualityCount < lowQualityCount ? 'Budget' : 'Balanced',
-                    feedbackReason: ''
+                    preference: highQualityCount > lowQualityCount ? 'Quality' : highQualityCount < lowQualityCount ? 'Budget' : 'Balanced'
                 };
 
+                // Feedback data for the feedback sheet/tab
+                const feedbackData = feedbackReason ? {
+                    type: 'feedback', // Indicates this goes to the feedback sheet
+                    timestamp: new Date().toISOString(),
+                    userName,
+                    group,
+                    feedbackReason: feedbackReason,
+                    // Include key identifiers to link back to main data
+                    budgetGiven: budget,
+                    totalSpent: totalSpent.toFixed(2),
+                    itemCount: cart.length
+                } : null;
+
                 try {
-                    // Send to Google Sheets
+                    // Send main data to Google Sheets
                     await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
+                        body: JSON.stringify(mainData)
                     });
+                    
+                    // If feedback is provided, send it separately (to be written to feedback tab)
+                    if (feedbackData) {
+                        await fetch(GOOGLE_SCRIPT_URL, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(feedbackData)
+                        });
+                    }
                     
                     // Also log to console for backup
                     console.log('=== EXPERIMENT DATA ===');
-                    console.log(JSON.stringify(data, null, 2));
+                    console.log('Main Data:', JSON.stringify(mainData, null, 2));
+                    if (feedbackData) {
+                        console.log('Feedback Data:', JSON.stringify(feedbackData, null, 2));
+                    }
                     console.log('======================');
                     
                     setSubmitted(true);
                 } catch (error) {
                     console.error('Error submitting:', error);
-                    console.log('Data (backup):', JSON.stringify(data, null, 2));
+                    console.log('Main Data (backup):', JSON.stringify(mainData, null, 2));
+                    if (feedbackData) {
+                        console.log('Feedback Data (backup):', JSON.stringify(feedbackData, null, 2));
+                    }
                     setSubmitted(true);
                 }
                 
                 setIsSubmitting(false);
-            };
-
-            const handleFeedbackSubmit = async (reason) => {
-                const totalSpent = cart.reduce((sum, item) => sum + item.price, 0);
-                const avgQuality = cart.length > 0 
-                    ? Math.round(cart.reduce((sum, item) => sum + item.qualityScore, 0) / cart.length)
-                    : 0;
-                const highQualityCount = cart.filter(i => i.qualityScore >= 90).length;
-                const lowQualityCount = cart.filter(i => i.qualityScore < 70).length;
-
-                const data = {
-                    timestamp: new Date().toISOString(),
-                    userName,
-                    group,
-                    budgetGiven: budget,
-                    totalSpent: totalSpent.toFixed(2),
-                    remaining: (budget - totalSpent).toFixed(2),
-                    itemCount: cart.length,
-                    items: cart.map(i => `${i.name} (${i.quality}, $${i.price.toFixed(2)}, ${i.qualityScore}%)`).join('; '),
-                    avgQualityScore: avgQuality,
-                    highQualityItems: highQualityCount,
-                    lowQualityItems: lowQualityCount,
-                    preference: highQualityCount > lowQualityCount ? 'Quality' : highQualityCount < lowQualityCount ? 'Budget' : 'Balanced',
-                    feedbackReason: reason
-                };
-
-                try {
-                    // Send updated data with feedback to Google Sheets
-                    await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-                    
-                    // Also log to console for backup
-                    console.log('=== EXPERIMENT DATA (with feedback) ===');
-                    console.log(JSON.stringify(data, null, 2));
-                    console.log('========================================');
-                } catch (error) {
-                    console.error('Error submitting feedback:', error);
-                    console.log('Data (backup):', JSON.stringify(data, null, 2));
-                }
             };
 
             return (
@@ -1089,24 +1080,36 @@
                     {screen === 'contact' && (
                         <ContactScreen onBack={closeContact} />
                     )}
-                    {screen === 'results' && (
-                        submitted && !feedbackComplete ? (
-                            <FeedbackScreen 
-                                cart={cart}
-                                onContinue={handleFeedbackContinue}
-                            />
-                        ) : (
+                    {screen === 'results' && !feedbackComplete && (
+                        <>
                             <ResultsScreen 
                                 userName={userName}
                                 group={group}
                                 cart={cart}
                                 budget={budget}
-                                onSubmit={handleSubmit}
-                                isSubmitting={isSubmitting}
-                                submitted={submitted}
-                                onFeedbackComplete={feedbackComplete}
+                                onSubmit={() => {}} // Don't submit yet
+                                isSubmitting={false}
+                                submitted={false}
+                                onFeedbackComplete={false}
                             />
-                        )
+                            <FeedbackScreen 
+                                cart={cart}
+                                onContinue={handleFeedbackContinue}
+                                asOverlay={true}
+                            />
+                        </>
+                    )}
+                    {screen === 'results' && feedbackComplete && (
+                        <ResultsScreen 
+                            userName={userName}
+                            group={group}
+                            cart={cart}
+                            budget={budget}
+                            onSubmit={handleSubmit}
+                            isSubmitting={isSubmitting}
+                            submitted={submitted}
+                            onFeedbackComplete={feedbackComplete}
+                        />
                     )}
                 </>
             );
@@ -1801,12 +1804,29 @@
                 marginTop: '8px',
                 color: 'var(--green-600)',
             },
+            feedbackOverlay: {
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+                padding: '20px',
+            },
             feedbackCard: {
                 backgroundColor: 'white',
                 borderRadius: '24px',
                 padding: '40px 30px',
                 boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
                 textAlign: 'center',
+                maxWidth: '500px',
+                width: '100%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
             },
             feedbackIcon: {
                 fontSize: '4rem',
