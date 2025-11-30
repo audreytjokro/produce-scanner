@@ -710,8 +710,97 @@
             );
         };
 
+        // Feedback Screen
+        const FeedbackScreen = ({ cart, onContinue }) => {
+            const [selectedReason, setSelectedReason] = useState('');
+            const [otherText, setOtherText] = useState('');
+
+            const reasons = [
+                { value: 'price', label: 'Price', icon: '💰' },
+                { value: 'freshness', label: 'Freshness', icon: '🌿' },
+                { value: 'label', label: 'Label', icon: '🏷️' },
+                { value: 'habit', label: 'Habit', icon: '🔄' },
+                { value: 'other', label: 'Other', icon: '💭' }
+            ];
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (selectedReason) {
+                    onContinue(selectedReason === 'other' ? `other: ${otherText.trim()}` : selectedReason);
+                }
+            };
+
+            return (
+                <div style={styles.screenContainer}>
+                    <div style={styles.centeredContent}>
+                        <div className="animate-fade-in" style={styles.feedbackCard}>
+                            <div style={styles.feedbackIcon}>🤔</div>
+                            <h2 style={styles.feedbackTitle}>Why did you choose that?</h2>
+                            <p style={styles.feedbackSubtitle}>
+                                Help us understand what influenced your shopping decisions
+                            </p>
+                            
+                            <form onSubmit={handleSubmit} style={styles.feedbackForm}>
+                                <div style={styles.reasonOptions}>
+                                    {reasons.map(reason => (
+                                        <label
+                                            key={reason.value}
+                                            style={{
+                                                ...styles.reasonOption,
+                                                ...(selectedReason === reason.value ? styles.reasonOptionSelected : {})
+                                            }}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="reason"
+                                                value={reason.value}
+                                                checked={selectedReason === reason.value}
+                                                onChange={(e) => setSelectedReason(e.target.value)}
+                                                style={styles.radioInput}
+                                            />
+                                            <span style={styles.reasonIcon}>{reason.icon}</span>
+                                            <span style={styles.reasonLabel}>{reason.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+
+                                {selectedReason === 'other' && (
+                                    <div className="animate-fade-in" style={styles.otherInputContainer}>
+                                        <label style={styles.label}>
+                                            Please specify:
+                                            <input
+                                                type="text"
+                                                value={otherText}
+                                                onChange={(e) => setOtherText(e.target.value)}
+                                                placeholder="Tell us more..."
+                                                style={styles.input}
+                                                autoFocus
+                                            />
+                                        </label>
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    style={{
+                                        ...styles.primaryButton,
+                                        opacity: selectedReason ? 1 : 0.5,
+                                        cursor: selectedReason ? 'pointer' : 'not-allowed',
+                                        marginTop: '20px'
+                                    }}
+                                    disabled={!selectedReason || (selectedReason === 'other' && !otherText.trim())}
+                                >
+                                    Continue →
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // Results Screen
-        const ResultsScreen = ({ userName, group, cart, budget, onSubmit, isSubmitting, submitted }) => {
+        const ResultsScreen = ({ userName, group, cart, budget, onSubmit, isSubmitting, submitted, onFeedbackComplete }) => {
             const totalSpent = cart.reduce((sum, item) => sum + item.price, 0);
             const remaining = budget - totalSpent;
             const avgQuality = cart.length > 0 
@@ -811,11 +900,17 @@
                                 <span>Saving your results...</span>
                             </div>
                         )}
-                        {submitted && (
+                        {submitted && !onFeedbackComplete && (
                             <div className="animate-fade-in" style={styles.submittedMessage}>
                                 <span style={styles.submittedIcon}>✅</span>
                                 <span>Results saved successfully!</span>
-                                <p style={styles.thankYou}>Thank you for participating!</p>
+                            </div>
+                        )}
+                        {submitted && onFeedbackComplete && (
+                            <div className="animate-fade-in" style={styles.submittedMessage}>
+                                <span style={styles.submittedIcon}>✅</span>
+                                <span>Thank you for participating!</span>
+                                <p style={styles.thankYou}>Your feedback has been recorded.</p>
                             </div>
                         )}
                     </div>
@@ -833,6 +928,8 @@
             const [submitted, setSubmitted] = useState(false);
             const [budget] = useState(() => generateBudget());
             const [previousScreen, setPreviousScreen] = useState(null);
+            const [feedbackReason, setFeedbackReason] = useState('');
+            const [feedbackComplete, setFeedbackComplete] = useState(false);
 
             const handleStart = (name) => {
                 setUserName(name);
@@ -850,6 +947,13 @@
                 // Move to results screen and automatically submit the data
                 setScreen('results');
                 handleSubmit();
+            };
+
+            const handleFeedbackContinue = (reason) => {
+                setFeedbackReason(reason);
+                setFeedbackComplete(true);
+                // Submit feedback update
+                handleFeedbackSubmit(reason);
             };
 
             const openContact = () => {
@@ -883,7 +987,8 @@
                     avgQualityScore: avgQuality,
                     highQualityItems: highQualityCount,
                     lowQualityItems: lowQualityCount,
-                    preference: highQualityCount > lowQualityCount ? 'Quality' : highQualityCount < lowQualityCount ? 'Budget' : 'Balanced'
+                    preference: highQualityCount > lowQualityCount ? 'Quality' : highQualityCount < lowQualityCount ? 'Budget' : 'Balanced',
+                    feedbackReason: ''
                 };
 
                 try {
@@ -910,6 +1015,49 @@
                 setIsSubmitting(false);
             };
 
+            const handleFeedbackSubmit = async (reason) => {
+                const totalSpent = cart.reduce((sum, item) => sum + item.price, 0);
+                const avgQuality = cart.length > 0 
+                    ? Math.round(cart.reduce((sum, item) => sum + item.qualityScore, 0) / cart.length)
+                    : 0;
+                const highQualityCount = cart.filter(i => i.qualityScore >= 90).length;
+                const lowQualityCount = cart.filter(i => i.qualityScore < 70).length;
+
+                const data = {
+                    timestamp: new Date().toISOString(),
+                    userName,
+                    group,
+                    budgetGiven: budget,
+                    totalSpent: totalSpent.toFixed(2),
+                    remaining: (budget - totalSpent).toFixed(2),
+                    itemCount: cart.length,
+                    items: cart.map(i => `${i.name} (${i.quality}, $${i.price.toFixed(2)}, ${i.qualityScore}%)`).join('; '),
+                    avgQualityScore: avgQuality,
+                    highQualityItems: highQualityCount,
+                    lowQualityItems: lowQualityCount,
+                    preference: highQualityCount > lowQualityCount ? 'Quality' : highQualityCount < lowQualityCount ? 'Budget' : 'Balanced',
+                    feedbackReason: reason
+                };
+
+                try {
+                    // Send updated data with feedback to Google Sheets
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    // Also log to console for backup
+                    console.log('=== EXPERIMENT DATA (with feedback) ===');
+                    console.log(JSON.stringify(data, null, 2));
+                    console.log('========================================');
+                } catch (error) {
+                    console.error('Error submitting feedback:', error);
+                    console.log('Data (backup):', JSON.stringify(data, null, 2));
+                }
+            };
+
             return (
                 <>
                     {screen !== 'contact' && (
@@ -932,19 +1080,33 @@
                             budget={budget}
                         />
                     )}
+                    {screen === 'feedback' && (
+                        <FeedbackScreen 
+                            cart={cart}
+                            onContinue={handleFeedbackContinue}
+                        />
+                    )}
                     {screen === 'contact' && (
                         <ContactScreen onBack={closeContact} />
                     )}
                     {screen === 'results' && (
-                        <ResultsScreen 
-                            userName={userName}
-                            group={group}
-                            cart={cart}
-                            budget={budget}
-                            onSubmit={handleSubmit}
-                            isSubmitting={isSubmitting}
-                            submitted={submitted}
-                        />
+                        submitted && !feedbackComplete ? (
+                            <FeedbackScreen 
+                                cart={cart}
+                                onContinue={handleFeedbackContinue}
+                            />
+                        ) : (
+                            <ResultsScreen 
+                                userName={userName}
+                                group={group}
+                                cart={cart}
+                                budget={budget}
+                                onSubmit={handleSubmit}
+                                isSubmitting={isSubmitting}
+                                submitted={submitted}
+                                onFeedbackComplete={feedbackComplete}
+                            />
+                        )
                     )}
                 </>
             );
@@ -1638,6 +1800,72 @@
                 fontWeight: '400',
                 marginTop: '8px',
                 color: 'var(--green-600)',
+            },
+            feedbackCard: {
+                backgroundColor: 'white',
+                borderRadius: '24px',
+                padding: '40px 30px',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+                textAlign: 'center',
+            },
+            feedbackIcon: {
+                fontSize: '4rem',
+                marginBottom: '20px',
+            },
+            feedbackTitle: {
+                fontFamily: "'Fraunces', serif",
+                fontSize: '1.75rem',
+                fontWeight: '600',
+                marginBottom: '12px',
+                color: 'var(--gray-800)',
+            },
+            feedbackSubtitle: {
+                color: 'var(--gray-600)',
+                lineHeight: '1.6',
+                marginBottom: '28px',
+                fontSize: '0.95rem',
+            },
+            feedbackForm: {
+                textAlign: 'left',
+            },
+            reasonOptions: {
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                marginBottom: '20px',
+            },
+            reasonOption: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '2px solid var(--gray-200)',
+                backgroundColor: 'var(--gray-50)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+            },
+            reasonOptionSelected: {
+                borderColor: 'var(--green-500)',
+                backgroundColor: 'var(--green-50)',
+            },
+            radioInput: {
+                width: '20px',
+                height: '20px',
+                cursor: 'pointer',
+                accentColor: 'var(--green-500)',
+            },
+            reasonIcon: {
+                fontSize: '1.5rem',
+            },
+            reasonLabel: {
+                fontSize: '1rem',
+                fontWeight: '500',
+                color: 'var(--gray-800)',
+            },
+            otherInputContainer: {
+                marginTop: '12px',
+                marginBottom: '8px',
             }
         };
 
